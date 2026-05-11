@@ -2054,6 +2054,68 @@ body {
     75% { transform: translateX(5px); }
 }
 
+/* Quantity Input Group Styles */
+.quantity-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.quantity-input-group .form-control {
+    flex: 1;
+}
+
+.quick-qty-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.btn-qty {
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 40px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.btn-qty.small {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    min-width: 35px;
+}
+
+.btn-qty:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-qty:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
+}
+
+/* Product Form Quantity Unit Group */
+.quantity-unit-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.quantity-unit-group .form-control {
+    flex: 1;
+}
+
+.quantity-unit-group select.form-control {
+    max-width: 120px;
+    cursor: pointer;
+}
+
 .text-muted {
     color: #6c757d !important;
 }

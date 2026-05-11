@@ -856,7 +856,7 @@ function renderProductsTable(productsToRender) {
             <td title="${product.id}">${shortId}</td>
             <td>${product.name}</td>
             <td>Rs ${parseFloat(product.price).toFixed(2)}</td>
-            <td>${product.quantity}</td>
+            <td>${parseFloat(product.quantity).toFixed(2)} ${product.unit || 'pcs'}</td>
             <td>${formatDate(product.created_at)}</td>
             <td>
                 <div class="action-buttons-table">
@@ -879,10 +879,12 @@ async function showAddProductModal() {
     currentProduct = null;
     document.getElementById('product-modal-title').textContent = 'Add Product';
     document.getElementById('save-product-btn').textContent = 'Save Product';
-    
+
     // Reset form
     productForm.reset();
-    
+    // Set default unit to pcs
+    document.getElementById('product-unit').value = 'pcs';
+
     // Generate and show new product ID but make it editable
     try {
         const newId = await window.electronAPI.generateProductId();
@@ -895,7 +897,7 @@ async function showAddProductModal() {
         document.getElementById('product-id').removeAttribute('readonly');
         document.getElementById('product-id').placeholder = 'Enter product ID (e.g., PID-xxx)';
     }
-    
+
     showModal(productModal);
 }
 
@@ -913,7 +915,8 @@ async function editProduct(id) {
         document.getElementById('product-name').value = currentProduct.name;
         document.getElementById('product-price').value = currentProduct.price;
         document.getElementById('product-quantity').value = currentProduct.quantity;
-        
+        document.getElementById('product-unit').value = currentProduct.unit || 'pcs';
+
         // Make ID field editable but indicate it can be changed
         document.getElementById('product-id').removeAttribute('readonly');
         document.getElementById('product-id').placeholder = 'Editable product ID';
@@ -936,13 +939,14 @@ function closeProductModal() {
 
 async function handleProductSubmit(e) {
     e.preventDefault();
-    
+
     const formData = new FormData(productForm);
     const productId = formData.get('id').trim();
     const productData = {
         name: formData.get('name').trim(),
         price: parseFloat(formData.get('price')),
-        quantity: parseInt(formData.get('quantity'))
+        quantity: parseFloat(formData.get('quantity')),
+        unit: formData.get('unit')
     };
 
     // Validate required fields
@@ -1081,48 +1085,50 @@ function populateProductSelect() {
 
 function addProductToBill() {
     const productId = selectedProductIdInput.value;
-    const quantity = parseInt(quantityInput.value);
-    
+    const quantity = parseFloat(quantityInput.value);
+
     if (!productId) {
         showToast('Please select a product', 'error');
         return;
     }
-    
+
     if (!quantity || quantity <= 0) {
         showToast('Please enter a valid quantity', 'error');
         return;
     }
-    
+
     // Find the selected product
     const selectedProduct = products.find(p => p.id === productId);
     if (!selectedProduct) {
         showToast('Selected product not found', 'error');
         return;
     }
-    
-    const availableStock = selectedProduct.quantity;
+
+    const availableStock = parseFloat(selectedProduct.quantity);
     if (quantity > availableStock) {
-        showToast(`Only ${availableStock} items available in stock`, 'error');
+        const unit = selectedProduct.unit || 'pcs';
+        showToast(`Only ${availableStock} ${unit} available in stock`, 'error');
         return;
     }
-    
+
     const productName = selectedProduct.name;
     const price = parseFloat(selectedProduct.price);
     const total = price * quantity;
-    
+    const unit = selectedProduct.unit || 'pcs';
+
     // Check if product already exists in bill
     const existingItemIndex = billItems.findIndex(item => item.productId === productId);
-    
+
     if (existingItemIndex >= 0) {
         // Update existing item
         const existingItem = billItems[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
-        
+
         if (newQuantity > availableStock) {
-            showToast(`Cannot add more. Only ${availableStock} items available in stock`, 'error');
+            showToast(`Cannot add more. Only ${availableStock} ${unit} available in stock`, 'error');
             return;
         }
-        
+
         billItems[existingItemIndex].quantity = newQuantity;
         billItems[existingItemIndex].total = price * newQuantity;
     } else {
@@ -1133,6 +1139,7 @@ function addProductToBill() {
             productName,
             price,
             quantity,
+            unit,
             total
         });
     }
@@ -1177,10 +1184,13 @@ function updateBillDisplay() {
     
     billItems.forEach(item => {
         const row = document.createElement('tr');
+        const unit = item.unit || 'pcs';
+        const displayQty = parseFloat(item.quantity) % 1 === 0 ? parseInt(item.quantity) : parseFloat(item.quantity).toFixed(2);
+
         row.innerHTML = `
             <td>${item.productName}</td>
             <td>Rs ${item.price.toFixed(2)}</td>
-            <td>${item.quantity}</td>
+            <td>${displayQty} ${unit}</td>
             <td>Rs ${item.total.toFixed(2)}</td>
             <td>
                 <button class="btn btn-danger btn-sm" onclick="removeFromBill(${item.id})">
@@ -1298,6 +1308,13 @@ function calculateGrandTotal() {
         grandTotal += item.total;
     });
     return grandTotal;
+}
+
+// Quick quantity setter for billing
+function setQuickQty(qty) {
+    const quantityInput = document.getElementById('quantity-input');
+    quantityInput.value = qty;
+    quantityInput.focus();
 }
 
 function updateCustomerDisplay() {
@@ -1737,7 +1754,8 @@ async function saveBillToCustomer() {
                 await window.electronAPI.updateProduct(item.productId, {
                     name: product.name,
                     price: product.price,
-                    quantity: Math.max(0, newQuantity) // Ensure quantity doesn't go negative
+                    quantity: Math.max(0, newQuantity),
+                    unit: product.unit || 'pcs' // Preserve the unit!
                 });
 
                 // Update local products array
@@ -2082,13 +2100,17 @@ function selectProduct(productId, productName, containerId) {
         productSearchInput.value = productName;
         selectedProductIdInput.value = productId;
         hideProductSearchResults();
+
+        // Update quick quantity buttons based on product unit
+        updateQuickQtyButtons(productId);
+
         quantityInput.focus();
     } else if (containerId === 'dashboard-search-results') {
         // Dashboard quick search - navigate to product
         hideDashboardSearchResults();
         dashboardProductSearch.value = productName;
         showToast(`Found: ${productName}`, 'info');
-        
+
         // Navigate to products page and highlight the product
         showPage('products');
         setTimeout(() => {
@@ -2103,6 +2125,65 @@ function selectProduct(productId, productName, containerId) {
                 }
             });
         }, 500);
+    }
+}
+
+function updateQuickQtyButtons(productId) {
+    const product = products.find(p => p.id === productId);
+    const quickQtyButtons = document.getElementById('quick-qty-buttons');
+    const quantityHint = document.getElementById('quantity-hint');
+
+    if (!product || !quickQtyButtons) return;
+
+    const unit = product.unit || 'pcs';
+    const availableStock = parseFloat(product.quantity);
+
+    // Update hint text
+    if (quantityHint) {
+        quantityHint.innerHTML = `<i class="fas fa-box"></i> Stock: ${availableStock} ${unit} | ${product.name}`;
+    }
+
+    // Update quick buttons based on unit
+    if (unit === 'kg') {
+        // Weight-based buttons
+        quickQtyButtons.innerHTML = `
+            <button type="button" class="btn-qty" onclick="setQuickQty(0.25)" title="Pao (0.25 kg)">¼</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(0.5)" title="Adha (0.5 kg)">½</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(1)" title="1 Kilo">1</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(2)" title="2 Kilo">2</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(5)" title="5 Kilo">5</button>
+        `;
+    } else if (unit === 'g') {
+        // Gram-based buttons
+        quickQtyButtons.innerHTML = `
+            <button type="button" class="btn-qty" onclick="setQuickQty(100)" title="100 grams">100g</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(250)" title="250 grams">250g</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(500)" title="500 grams">500g</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(1000)" title="1 Kilo">1kg</button>
+        `;
+    } else if (unit === 'l') {
+        // Litre-based buttons
+        quickQtyButtons.innerHTML = `
+            <button type="button" class="btn-qty" onclick="setQuickQty(0.25)" title="250 ml">¼</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(0.5)" title="500 ml">½</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(1)" title="1 Litre">1</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(2)" title="2 Litre">2</button>
+        `;
+    } else if (unit === 'ml') {
+        // Ml-based buttons
+        quickQtyButtons.innerHTML = `
+            <button type="button" class="btn-qty" onclick="setQuickQty(250)" title="250 ml">250</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(500)" title="500 ml">500</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(1000)" title="1 Litre">1L</button>
+        `;
+    } else {
+        // Default (pieces) - integer buttons
+        quickQtyButtons.innerHTML = `
+            <button type="button" class="btn-qty" onclick="setQuickQty(1)" title="1 Piece">1</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(2)" title="2 Pieces">2</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(5)" title="5 Pieces">5</button>
+            <button type="button" class="btn-qty" onclick="setQuickQty(10)" title="10 Pieces">10</button>
+        `;
     }
 }
 
@@ -2435,7 +2516,8 @@ async function printBill(saleAlreadyRecorded = false) {
                     await window.electronAPI.updateProduct(item.productId, {
                         name: product.name,
                         price: product.price,
-                        quantity: Math.max(0, newQuantity) // Ensure quantity doesn't go negative
+                        quantity: Math.max(0, newQuantity),
+                        unit: product.unit || 'pcs' // Preserve the unit!
                     });
 
                     // Update local products array

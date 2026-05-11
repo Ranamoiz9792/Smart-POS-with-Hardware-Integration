@@ -68,7 +68,8 @@ class Database {
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           price REAL NOT NULL,
-          quantity INTEGER NOT NULL DEFAULT 0,
+          quantity REAL NOT NULL DEFAULT 0,
+          unit TEXT DEFAULT 'pcs',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -255,7 +256,7 @@ class Database {
             reject(err);
             return;
           }
-          
+
           const hasCustomerId = billColumns.some(col => col.name === 'customer_id');
           if (!hasCustomerId) {
             totalMigrations++;
@@ -270,11 +271,35 @@ class Database {
               }
             });
           }
-          
+
           // If no migrations needed, resolve immediately
           if (totalMigrations === 0) {
             console.log('Database is up to date');
             resolve();
+          }
+        });
+
+        // Check products table for unit column and decimal quantity support
+        this.db.all("PRAGMA table_info(products)", [], (err, productColumns) => {
+          if (err) {
+            console.error('Error checking products table:', err);
+            reject(err);
+            return;
+          }
+
+          const hasUnit = productColumns.some(col => col.name === 'unit');
+          if (!hasUnit) {
+            totalMigrations++;
+            console.log('Adding unit column to products table...');
+            this.db.run("ALTER TABLE products ADD COLUMN unit TEXT DEFAULT 'pcs'", (err) => {
+              if (err) {
+                console.error('Error adding unit column:', err);
+                reject(err);
+              } else {
+                console.log('Successfully added unit column');
+                checkComplete();
+              }
+            });
           }
         });
       });
@@ -712,14 +737,14 @@ class Database {
 
   async createProduct(product) {
     return new Promise((resolve, reject) => {
-      const { name, price, quantity = 0 } = product;
+      const { name, price, quantity = 0, unit = 'pcs' } = product;
       const productId = product.id || this.generateProductId();
       const query = `
-        INSERT INTO products (id, name, price, quantity)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO products (id, name, price, quantity, unit)
+        VALUES (?, ?, ?, ?, ?)
       `;
-      
-      this.db.run(query, [productId, name, price, quantity], function(err) {
+
+      this.db.run(query, [productId, name, price, quantity, unit], function(err) {
         if (err) {
           reject(err);
         } else {
@@ -728,6 +753,7 @@ class Database {
             name,
             price,
             quantity,
+            unit,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
@@ -738,20 +764,20 @@ class Database {
 
   async updateProduct(id, product) {
     return new Promise((resolve, reject) => {
-      const { name, price, quantity } = product;
+      const { name, price, quantity, unit } = product;
       const query = `
-        UPDATE products 
-        SET name = ?, price = ?, quantity = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE products
+        SET name = ?, price = ?, quantity = ?, unit = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `;
-      
-      this.db.run(query, [name, price, quantity, id], function(err) {
+
+      this.db.run(query, [name, price, quantity, unit, id], function(err) {
         if (err) {
           reject(err);
         } else if (this.changes === 0) {
           reject(new Error('Product not found'));
         } else {
-          resolve({ id, name, price, quantity, updated_at: new Date().toISOString() });
+          resolve({ id, name, price, quantity, unit, updated_at: new Date().toISOString() });
         }
       });
     });

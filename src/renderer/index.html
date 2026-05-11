@@ -386,7 +386,18 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="quantity-input">Quantity:</label>
-                                    <input type="number" id="quantity-input" class="form-control" min="1" value="1" placeholder="Enter quantity">
+                                    <div class="quantity-input-group">
+                                        <input type="number" id="quantity-input" class="form-control" step="0.01" min="0.01" value="1" placeholder="Enter quantity">
+                                        <div class="quick-qty-buttons" id="quick-qty-buttons">
+                                            <button type="button" class="btn-qty" onclick="setQuickQty(1)" title="1 Piece">1</button>
+                                            <button type="button" class="btn-qty" onclick="setQuickQty(2)" title="2 Pieces">2</button>
+                                            <button type="button" class="btn-qty" onclick="setQuickQty(5)" title="5 Pieces">5</button>
+                                            <button type="button" class="btn-qty" onclick="setQuickQty(10)" title="10 Pieces">10</button>
+                                        </div>
+                                    </div>
+                                    <small id="quantity-hint" class="text-muted" style="display: block; margin-top: 0.25rem;">
+                                        <i class="fas fa-info-circle"></i> Select a product to see unit-specific quick buttons
+                                    </small>
                                 </div>
                                 <button class="btn btn-primary" onclick="addProductToBill()">
                                     <i class="fas fa-plus"></i>
@@ -714,7 +725,19 @@
                 </div>
                 <div class="form-group">
                     <label for="product-quantity">Quantity *</label>
-                    <input type="number" id="product-quantity" name="quantity" min="0" required placeholder="Enter quantity">
+                    <div class="quantity-unit-group">
+                        <input type="number" id="product-quantity" name="quantity" step="0.01" min="0" required placeholder="Enter quantity" class="form-control">
+                        <select id="product-unit" name="unit" class="form-control">
+                            <option value="pcs">Pcs</option>
+                            <option value="kg">Kg</option>
+                            <option value="g">Grams</option>
+                            <option value="l">Litre</option>
+                            <option value="ml">Ml</option>
+                        </select>
+                    </div>
+                    <small class="text-muted" style="display: block; margin-top: 0.25rem;">
+                        <i class="fas fa-info-circle"></i> For weight items (kg, grams), you can use decimals (e.g., 10.5 kg)
+                    </small>
                 </div>
             </form>
             <div class="modal-footer">
