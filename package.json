@@ -1,0 +1,51 @@
+{
+  "name": "customer-management-app",
+  "version": "1.0.0",
+  "description": "A professional desktop application for customer management with SQLite database",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never"
+  },
+  "keywords": [
+    "electron",
+    "desktop",
+    "customer-management",
+    "sqlite"
+  ],
+  "author": "Customer Management Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6",
+    "bcrypt": "^5.1.1"
+  },
+  "build": {
+    "appId": "com.customerapp.desktop",
+    "productName": "Customer Management",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    }
+  }
+}

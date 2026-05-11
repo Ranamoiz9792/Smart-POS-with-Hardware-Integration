@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management System</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="../../assets/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Quagga library removed - using external USB barcode scanner instead -->
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-users"></i> Customer CRM</h2>
+                <div class="user-info">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="user-details">
+                        <div class="user-name" id="user-name">Loading...</div>
+                        <div class="user-username" id="sidebar-username">@loading</div>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="customers">
+                    <i class="fas fa-users"></i>
+                    <span>Customers</span>
+                </a>
+                <a href="#" class="nav-item" data-page="products">
+                    <i class="fas fa-box"></i>
+                    <span>Products</span>
+                </a>
+                <a href="#" class="nav-item" data-page="billing">
+                    <i class="fas fa-calculator"></i>
+                    <span>Billing</span>
+                </a>
+                <a href="#" class="nav-item" data-page="sales">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Sales</span>
+                </a>
+                <a href="#" class="nav-item" data-page="profile">
+                    <i class="fas fa-user-cog"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
+            <div class="sidebar-footer">
+                <button class="logout-btn" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <div class="page-header">
+                    <h1>Dashboard</h1>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-customers">0</h3>
+                            <p>Total Customers</p>
+                        </div>
+                        <button class="stat-action" onclick="showCustomersPage()">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-products">0</h3>
+                            <p>Total Products</p>
+                        </div>
+                        <button class="stat-action" onclick="showProductsPage()">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="today-sales">Rs 0.00</h3>
+                            <p>Today's Sales</p>
+                        </div>
+                        <button class="stat-action" onclick="showPage('sales')">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-dues">Rs 0.00</h3>
+                            <p>Total Dues</p>
+                        </div>
+                        <button class="stat-action" onclick="showCustomersPage()">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Section -->
+                <div class="quick-actions-section">
+                    <h3>Quick Actions</h3>
+                    <div class="quick-actions-grid">
+                        <div class="quick-action-card">
+                            <div class="quick-search-container">
+                                <input type="text" id="dashboard-product-search" placeholder="Quick product search..." class="quick-search-input">
+                                <div id="dashboard-search-results" class="quick-search-results" style="display: none;">
+                                    <!-- Quick search results -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="quick-action-card">
+                            <button class="quick-action-btn" onclick="openQuickScanner()">
+                                <i class="fas fa-qrcode"></i>
+                                <span>Quick QR Scan</span>
+                            </button>
+                        </div>
+                        <div class="quick-action-card">
+                            <button class="quick-action-btn" onclick="showPage('billing')">
+                                <i class="fas fa-calculator"></i>
+                                <span>New Bill</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Alerts -->
+                <div class="alerts-section">
+                    <h3>Stock Alerts</h3>
+                    <div id="low-stock-alerts" class="alerts-container">
+                        <!-- Low stock alerts will be populated here -->
+                    </div>
+                </div>
+                
+                <!-- Overdue Payments -->
+                <div class="alerts-section">
+                    <h3>Overdue Payments</h3>
+                    <div id="overdue-customers" class="alerts-container">
+                        <!-- Overdue customers will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Inactive Customers -->
+                <div class="alerts-section">
+                    <h3>Customers Not Visited This Month</h3>
+                    <div id="inactive-customers" class="alerts-container">
+                        <!-- Inactive customers will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customers Page -->
+            <div id="customers-page" class="page">
+                <div class="page-header">
+                    <h1>Customers</h1>
+                    <div class="page-header-actions">
+                        <button class="btn btn-success" onclick="exportCustomers()">
+                            <i class="fas fa-download"></i>
+                            Export Data
+                        </button>
+                        <button class="btn btn-primary" onclick="showAddCustomerModal()">
+                            <i class="fas fa-plus"></i>
+                            Add Customer
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="search-container">
+                            <input type="text" id="search-input" placeholder="Search customers..." class="search-input">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                    </div>
+
+                    <table class="customers-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Created Date</th>
+                                <th>Remaining Dues</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body">
+                            <!-- Customers will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Products Page -->
+            <div id="products-page" class="page">
+                <div class="page-header">
+                    <h1>Products</h1>
+                    <div class="page-header-actions">
+                        <button class="btn btn-success" onclick="exportProducts()">
+                            <i class="fas fa-download"></i>
+                            Export Data
+                        </button>
+                        <button class="btn btn-primary" onclick="showAddProductModal()">
+                            <i class="fas fa-plus"></i>
+                            Add Product
+                        </button>
+                        <button class="btn btn-info" onclick="openScannerAndAddProduct()">
+                            <i class="fas fa-barcode"></i>
+                            Scan & Add Product
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <div class="search-container">
+                            <input type="text" id="product-search-input" placeholder="Search products..." class="search-input">
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                    </div>
+
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Price (Rs)</th>
+                                <th>Quantity</th>
+                                <th>Created Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                            <!-- Products will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Billing Page -->
+            <div id="billing-page" class="page">
+                <div class="page-header">
+                    <h1>Billing Calculator</h1>
+                    <div class="page-header-actions">
+                        <button class="btn btn-success" onclick="printBill()" id="print-bill-btn" disabled>
+                            <i class="fas fa-print"></i>
+                            Print Bill
+                        </button>
+                        <div class="save-customer-section">
+                            <div class="print-option">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="auto-print-checkbox" checked>
+                                    <span class="checkmark"></span>
+                                    Auto-print bill after saving
+                                </label>
+                            </div>
+                            <button class="btn btn-info" onclick="saveBillToCustomer()" id="save-to-customer-btn" disabled>
+                                <i class="fas fa-user-plus"></i>
+                                Save to Customer
+                            </button>
+                        </div>
+                        <button class="btn btn-warning" onclick="clearBill()">
+                            <i class="fas fa-trash"></i>
+                            Clear Bill
+                        </button>
+                    </div>
+                </div>
+
+                <div class="billing-container">
+                    <!-- Customer Selection Section -->
+                    <div class="billing-section">
+                        <h3>Customer Selection (Optional)</h3>
+                        <div class="customer-selection">
+                            <div class="form-group">
+                                <label for="customer-search">Select Customer:</label>
+                                <div class="search-dropdown-container">
+                                    <input type="text" id="customer-search" class="form-control" placeholder="Type customer name or phone..." autocomplete="off">
+                                    <div id="customer-search-results" class="search-results-dropdown" style="display: none;">
+                                        <!-- Customer search results will appear here -->
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selected-customer-id" value="">
+                                <div id="selected-customer-info" class="selected-customer-info" style="display: none;">
+                                    <div class="customer-card">
+                                        <div class="customer-avatar">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div class="customer-details">
+                                            <h4 id="selected-customer-name"></h4>
+                                            <p id="selected-customer-phone"></p>
+                                            <p id="selected-customer-dues" class="customer-dues"></p>
+                                        </div>
+                                        <div class="customer-actions">
+                                            <button class="btn btn-sm btn-warning" onclick="viewDuesDetails()" title="View Dues Details">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="clearCustomerSelection()" title="Remove Customer">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product Selection Section -->
+                    <div class="billing-section">
+                        <h3>Product Selection</h3>
+                        <div class="product-selection">
+                            <div class="scanner-section">
+                                <button class="btn btn-primary" onclick="openScanner()">
+                                    <i class="fas fa-barcode"></i>
+                                    Scan Product
+                                </button>
+                                <span class="or-text">OR</span>
+                            </div>
+                            <div class="manual-selection">
+                                <div class="form-group">
+                                    <label for="product-search">Search Product:</label>
+                                    <div class="search-dropdown-container">
+                                        <input type="text" id="product-search" class="form-control" placeholder="Type product name or ID..." autocomplete="off">
+                                        <div id="product-search-results" class="search-results-dropdown" style="display: none;">
+                                            <!-- Search results will appear here -->
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="selected-product-id" value="">
+                                </div>
+                                <div class="form-group">
+                                    <label for="quantity-input">Quantity:</label>
+                                    <input type="number" id="quantity-input" class="form-control" min="1" value="1" placeholder="Enter quantity">
+                                </div>
+                                <button class="btn btn-primary" onclick="addProductToBill()">
+                                    <i class="fas fa-plus"></i>
+                                    Add to Bill
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bill Items Section -->
+                    <div class="billing-section">
+                        <h3>Bill Items</h3>
+                        <div class="bill-items-container">
+                            <table class="bill-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Price (Rs)</th>
+                                        <th>Qty</th>
+                                        <th>Total (Rs)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bill-items-body">
+                                    <!-- Bill items will be added here -->
+                                </tbody>
+                            </table>
+                            <div class="bill-summary">
+                                <div class="summary-row">
+                                    <span class="summary-label">Total Items:</span>
+                                    <span class="summary-value" id="total-items">0</span>
+                                </div>
+                                <div class="summary-row grand-total">
+                                    <span class="summary-label">Grand Total:</span>
+                                    <span class="summary-value" id="grand-total">Rs 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales Page -->
+            <div id="sales-page" class="page">
+                <div class="page-header">
+                    <h1>Sales Reports</h1>
+                    <div class="page-header-actions">
+                        <button class="btn btn-secondary" onclick="refreshCurrentTab()">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Sales Tabs -->
+                <div class="sales-tabs">
+                    <button class="tab-button active" onclick="showSalesTab('daily')" data-tab="daily">
+                        <i class="fas fa-calendar-day"></i>
+                        Today's Sales
+                    </button>
+                    <button class="tab-button" onclick="showSalesTab('monthly')" data-tab="monthly">
+                        <i class="fas fa-calendar-alt"></i>
+                        Monthly Report
+                    </button>
+                </div>
+                
+                <div class="page-content">
+                    <!-- Daily Sales Tab -->
+                    <div id="daily-tab" class="tab-content active">
+                        <div class="sales-summary-cards">
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div class="summary-info">
+                                    <h3 id="daily-total-sales">Rs 0.00</h3>
+                                    <p>Today's Total Sales</p>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="summary-info">
+                                    <h3 id="daily-total-items">0</h3>
+                                    <p>Items Sold Today</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="sales-history-section">
+                            <div class="section-header">
+                                <h2>Today's Sales Details</h2>
+                                <div class="section-actions">
+                                    <button class="btn btn-primary" onclick="exportDailySales()">
+                                        <i class="fas fa-download"></i>
+                                        Export CSV
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="sales-table-container">
+                                <table class="sales-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Price (Rs)</th>
+                                            <th>Total (Rs)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="daily-sales-table-body">
+                                        <!-- Daily sales history will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Sales Tab -->
+                    <div id="monthly-tab" class="tab-content">
+                        <div class="monthly-controls">
+                            <div class="month-selector">
+                                <label for="month-select">Select Month:</label>
+                                <select id="month-select" onchange="loadMonthlyReport()">
+                                    <!-- Month options will be populated here -->
+                                </select>
+                                <select id="year-select" onchange="loadMonthlyReport()">
+                                    <!-- Year options will be populated here -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="sales-summary-cards">
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                                <div class="summary-info">
+                                    <h3 id="monthly-total-sales">Rs 0.00</h3>
+                                    <p>Monthly Total Sales</p>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div class="summary-info">
+                                    <h3 id="monthly-total-items">0</h3>
+                                    <p>Items Sold</p>
+                                </div>
+                            </div>
+                            <div class="summary-card">
+                                <div class="summary-icon">
+                                    <i class="fas fa-receipt"></i>
+                                </div>
+                                <div class="summary-info">
+                                    <h3 id="monthly-total-bills">0</h3>
+                                    <p>Total Bills</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="sales-history-section">
+                            <div class="section-header">
+                                <h2>Monthly Sales Details</h2>
+                                <div class="section-actions">
+                                    <button class="btn btn-primary" onclick="exportMonthlySales()">
+                                        <i class="fas fa-download"></i>
+                                        Export CSV
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="sales-table-container">
+                                <table class="sales-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Daily Sales (Rs)</th>
+                                            <th>Items Sold</th>
+                                            <th>Bills Count</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="monthly-sales-table-body">
+                                        <!-- Monthly sales history will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Page -->
+            <div id="profile-page" class="page">
+                <div class="page-header">
+                    <h1>Profile Settings</h1>
+                </div>
+
+                <div class="profile-container">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="profile-info">
+                                <h2 id="profile-full-name">Loading...</h2>
+                                <p id="profile-username">@loading</p>
+                            </div>
+                        </div>
+
+                        <form id="profile-form" class="profile-form">
+                            <div class="form-group">
+                                <label for="profile-fullname">Full Name</label>
+                                <input type="text" id="profile-fullname" name="fullName" required placeholder="Enter your full name">
+                            </div>
+
+
+
+                            <div class="form-group">
+                                <label for="profile-current-password">Current Password (required to change password)</label>
+                                <div class="password-input">
+                                    <input type="password" id="profile-current-password" name="currentPassword" placeholder="Enter current password">
+                                    <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-current-password')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-new-password">New Password</label>
+                                <div class="password-input">
+                                    <input type="password" id="profile-new-password" name="newPassword" placeholder="Enter new password" minlength="6">
+                                    <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-new-password')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="profile-confirm-password">Confirm New Password</label>
+                                <div class="password-input">
+                                    <input type="password" id="profile-confirm-password" name="confirmPassword" placeholder="Confirm new password" minlength="6">
+                                    <button type="button" class="password-toggle" onclick="toggleProfilePassword('profile-confirm-password')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    Update Profile
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Customer</h2>
+                <button class="close-modal" onclick="closeCustomerModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="customer-form" class="modal-body">
+                <div class="form-group">
+                    <label for="customer-id">Customer ID *</label>
+                    <input type="text" id="customer-id" name="id" required placeholder="CID-will-be-generated">
+                </div>
+                <div class="form-group">
+                    <label for="customer-name">Name *</label>
+                    <input type="text" id="customer-name" name="name" required placeholder="Enter customer name">
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Phone Number *</label>
+                    <input type="tel" id="customer-phone" name="phone" required placeholder="Enter phone number">
+                </div>
+                <div class="form-group">
+                    <label for="customer-dues">Remaining Dues (Rs)</label>
+                    <input type="number" id="customer-dues" name="remaining_dues" step="0.01" min="0" placeholder="Enter remaining dues (optional)">
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
+                <button type="submit" form="customer-form" class="btn btn-primary" id="save-customer-btn">Save Customer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="product-modal-title">Add Product</h2>
+                <button class="close-modal" onclick="closeProductModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="product-form" class="modal-body">
+                <div class="form-group">
+                    <label for="product-id">Product ID *</label>
+                    <div class="input-with-button">
+                        <input type="text" id="product-id" name="id" required placeholder="PID-will-be-generated">
+                        <button type="button" class="btn btn-primary input-btn" onclick="openScannerForProduct()" title="Scan Barcode">
+                            <i class="fas fa-barcode"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="product-name">Product Name *</label>
+                    <input type="text" id="product-name" name="name" required placeholder="Enter product name">
+                </div>
+                <div class="form-group">
+                    <label for="product-price">Price (Rs) *</label>
+                    <input type="number" id="product-price" name="price" step="0.01" min="0" required placeholder="Enter price">
+                </div>
+                <div class="form-group">
+                    <label for="product-quantity">Quantity *</label>
+                    <input type="number" id="product-quantity" name="quantity" min="0" required placeholder="Enter quantity">
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+                <button type="submit" form="product-form" class="btn btn-primary" id="save-product-btn">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Modal -->
+    <div id="scanner-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="scanner-modal-title">Scan Product Barcode</h2>
+                <button class="close-modal" onclick="closeScannerModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="scanner-container">
+                    <div class="external-scanner-info">
+                        <i class="fas fa-barcode" style="font-size: 4rem; color: #667eea;"></i>
+                        <h3>Ready to Scan</h3>
+                        <p>Use your external barcode scanner to scan a product</p>
+                        <p class="scanner-hint">
+                            <i class="fas fa-info-circle"></i>
+                            Scanner will automatically detect the barcode
+                        </p>
+                    </div>
+                    <div class="scanner-input">
+                        <label for="manual-barcode">Or enter barcode manually:</label>
+                        <div class="manual-input-group">
+                            <input type="text" id="manual-barcode" placeholder="Scan barcode or enter product ID" class="form-control" autofocus>
+                            <button class="btn btn-secondary" id="scanner-action-btn" onclick="handleScannerAction()">
+                                <i class="fas fa-search"></i>
+                                <span>Search</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeScannerModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Confirm Delete</h2>
+                <button class="close-modal" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this customer? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Dues Confirmation Modal -->
+    <div id="clear-dues-modal" class="modal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <h2>Clear Dues</h2>
+                <button class="close-modal" onclick="closeClearDuesModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="clear-dues-message">Are you sure you want to clear this customer's dues?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeClearDuesModal()">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirm-clear-dues-btn">Yes, Clear Dues</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History Modal -->
+    <div id="payment-history-modal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2 id="payment-history-title">Payment History</h2>
+                <button class="close-modal" onclick="closePaymentHistoryModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="payment-history-content">
+                    <!-- Payment history will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" onclick="exportPaymentHistory()">
+                    <i class="fas fa-download"></i> Export History
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closePaymentHistoryModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="scripts/app.js"></script>
+</body>
+</html>
