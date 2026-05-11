@@ -1895,6 +1895,169 @@ body {
     border-color: #007bff;
 }
 
+/* Payment Status Options Styles */
+.payment-status-group {
+    margin-top: 1rem !important;
+}
+
+.payment-status-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.payment-status-option {
+    flex: 1;
+    min-width: 100px;
+    cursor: pointer;
+}
+
+.payment-status-option input[type="radio"] {
+    display: none;
+}
+
+.payment-status-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.payment-status-label i {
+    font-size: 1.5rem;
+}
+
+.payment-status-label span {
+    font-weight: 500;
+    color: #495057;
+    font-size: 0.9rem;
+}
+
+.payment-status-label.cash {
+    border-color: #28a745;
+    background: #e6ffed;
+}
+
+.payment-status-label.cash i {
+    color: #28a745;
+}
+
+.payment-status-label.due {
+    border-color: #dc3545;
+    background: #ffe6e6;
+}
+
+.payment-status-label.due i {
+    color: #dc3545;
+}
+
+.payment-status-label.partial {
+    border-color: #ffc107;
+    background: #fff3cd;
+}
+
+.payment-status-label.partial i {
+    color: #ffc107;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.cash {
+    background: #28a745;
+    border-color: #1e7e34;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.cash span {
+    color: white;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.cash i {
+    color: white;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.due {
+    background: #dc3545;
+    border-color: #bd2130;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.due span {
+    color: white;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.due i {
+    color: white;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.partial {
+    background: #ffc107;
+    border-color: #d39e00;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.partial span {
+    color: #212529;
+}
+
+.payment-status-option input[type="radio"]:checked + .payment-status-label.partial i {
+    color: #212529;
+}
+
+.partial-payment-container {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.partial-payment-container label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.partial-payment-container input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.partial-payment-container input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.partial-payment-container input:invalid,
+.partial-payment-container input.warning {
+    border-color: #dc3545;
+    animation: shake 0.3s ease;
+}
+
+.partial-payment-container input.valid {
+    border-color: #28a745;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
 /* Inactive Customers Alert Styles */
 .alert-item.inactive-customer {
     background: #fff3cd;

@@ -165,6 +165,41 @@ function setupEventListeners() {
             document.getElementById('product-id').focus();
         }
     });
+
+    // Payment status radio buttons
+    document.querySelectorAll('input[name="payment-status"]').forEach(radio => {
+        radio.addEventListener('change', handlePaymentStatusChange);
+    });
+
+    // Partial payment amount input
+    const partialAmountInput = document.getElementById('partial-amount');
+    if (partialAmountInput) {
+        partialAmountInput.addEventListener('input', updateRemainingAmount);
+        partialAmountInput.addEventListener('blur', validatePartialPayment);
+    }
+}
+
+function validatePartialPayment() {
+    const grandTotal = calculateGrandTotal();
+    const partialAmountInput = document.getElementById('partial-amount');
+    const cashPaid = parseFloat(partialAmountInput.value) || 0;
+
+    if (grandTotal > 0) {
+        if (cashPaid > grandTotal) {
+            // Cap the value at grand total minus 0.01 (to keep it as a partial payment)
+            partialAmountInput.value = (grandTotal - 0.01).toFixed(2);
+            updateRemainingAmount();
+            showToast(`Maximum partial payment is Rs ${(grandTotal - 0.01).toFixed(2)} (must be less than total Rs ${grandTotal.toFixed(2)})`, 'warning');
+        } else if (cashPaid === grandTotal && grandTotal > 0) {
+            // If equals total, clear it and suggest using Cash Paid
+            partialAmountInput.value = '';
+            updateRemainingAmount();
+            showToast('Amount equals total bill. Please select "Cash Paid" instead of "Partial Pay".', 'info');
+        } else if (cashPaid <= 0) {
+            partialAmountInput.value = '';
+            updateRemainingAmount();
+        }
+    }
 }
 
 // Navigation
@@ -1158,11 +1193,17 @@ function updateBillDisplay() {
         grandTotal += item.total;
         totalItems += item.quantity;
     });
-    
+
     totalItemsElement.textContent = totalItems;
     grandTotalElement.textContent = `Rs ${grandTotal.toFixed(2)}`;
     printBillBtn.disabled = false;
     updateSaveToCustomerButton();
+
+    // Update partial payment validation if partial payment is selected
+    const paymentStatus = getPaymentStatus();
+    if (paymentStatus === 'partial') {
+        updateRemainingAmount();
+    }
 }
 
 function clearBill() {
@@ -1516,35 +1557,178 @@ function updateSaveToCustomerButton() {
     saveToCustomerBtn.disabled = billItems.length === 0 || !selectedCustomer;
 }
 
+// Payment Status Functions
+function handlePaymentStatusChange(e) {
+    const partialPaymentInput = document.getElementById('partial-payment-input');
+    const paymentStatus = e.target.value;
+
+    if (paymentStatus === 'partial') {
+        partialPaymentInput.style.display = 'block';
+        // Focus on the partial amount input for better UX
+        setTimeout(() => {
+            document.getElementById('partial-amount').focus();
+        }, 100);
+        updateRemainingAmount();
+    } else {
+        partialPaymentInput.style.display = 'none';
+        // Clear partial payment values when switching away
+        document.getElementById('partial-amount').value = '';
+        document.getElementById('remaining-amount').textContent = 'Rs 0.00';
+        document.getElementById('partial-amount').style.borderColor = '';
+    }
+}
+
+function updateRemainingAmount() {
+    const grandTotal = calculateGrandTotal();
+    const partialAmount = parseFloat(document.getElementById('partial-amount').value) || 0;
+    const remaining = Math.max(0, grandTotal - partialAmount);
+
+    const remainingElement = document.getElementById('remaining-amount');
+    const hintElement = document.getElementById('partial-payment-hint');
+    const partialAmountInput = document.getElementById('partial-amount');
+
+    remainingElement.textContent = `Rs ${remaining.toFixed(2)}`;
+
+    // Reset styles
+    remainingElement.style.color = '';
+    remainingElement.style.fontWeight = '';
+    partialAmountInput.style.borderColor = '';
+    if (hintElement) {
+        hintElement.style.color = '';
+        hintElement.style.display = 'block';
+    }
+
+    // No items in bill yet
+    if (grandTotal === 0) {
+        remainingElement.textContent = 'Rs 0.00';
+        if (hintElement) {
+            hintElement.innerHTML = '<i class="fas fa-shopping-cart"></i> Add items to bill first';
+        }
+        return;
+    }
+
+    // Validate and show warnings
+    if (partialAmount >= grandTotal) {
+        remainingElement.style.color = '#dc3545';
+        remainingElement.style.fontWeight = 'bold';
+        partialAmountInput.style.borderColor = '#dc3545';
+
+        if (partialAmount === grandTotal) {
+            remainingElement.textContent = 'Rs 0.00 ⚠️ Full payment - use "Cash Paid" option';
+            if (hintElement) {
+                hintElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Use "Cash Paid" for full payment instead</strong>';
+                hintElement.style.color = '#dc3545';
+            }
+        } else {
+            remainingElement.textContent = `Rs ${remaining.toFixed(2)} ⚠️ Amount exceeds total!`;
+            if (hintElement) {
+                hintElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <strong>Payment cannot exceed total (Rs ${grandTotal.toFixed(2)})</strong>`;
+                hintElement.style.color = '#dc3545';
+            }
+        }
+    } else if (partialAmount <= 0) {
+        remainingElement.style.color = '#dc3545';
+        remainingElement.style.fontWeight = 'bold';
+        partialAmountInput.style.borderColor = '#dc3545';
+        remainingElement.textContent = `Rs ${remaining.toFixed(2)} ⚠️ No payment entered`;
+        if (hintElement) {
+            hintElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> <strong>Enter amount or use "Full Due" for no payment</strong>';
+            hintElement.style.color = '#dc3545';
+        }
+    } else {
+        // Valid partial payment
+        partialAmountInput.style.borderColor = '#28a745';
+        if (hintElement) {
+            hintElement.innerHTML = `<i class="fas fa-check-circle"></i> Valid: Rs ${partialAmount.toFixed(2)} paid, Rs ${remaining.toFixed(2)} remaining`;
+            hintElement.style.color = '#28a745';
+        }
+    }
+}
+
+function getPaymentStatus() {
+    const selectedStatus = document.querySelector('input[name="payment-status"]:checked');
+    if (!selectedStatus) return 'cash'; // Default to cash
+
+    return selectedStatus.value;
+}
+
+function calculatePaymentAmounts() {
+    const grandTotal = calculateGrandTotal();
+    const paymentStatus = getPaymentStatus();
+
+    let cashPaid = 0;
+    let dueAmount = 0;
+
+    switch (paymentStatus) {
+        case 'cash':
+            cashPaid = grandTotal;
+            dueAmount = 0;
+            break;
+        case 'due':
+            cashPaid = 0;
+            dueAmount = grandTotal;
+            break;
+        case 'partial':
+            cashPaid = parseFloat(document.getElementById('partial-amount').value) || 0;
+            dueAmount = Math.max(0, grandTotal - cashPaid);
+            break;
+    }
+
+    return { paymentStatus, cashPaid, dueAmount };
+}
+
 async function saveBillToCustomer() {
     if (billItems.length === 0) {
         showToast('Please add items to the bill first', 'warning');
         return;
     }
-    
+
     if (!selectedCustomer) {
         showToast('Please select a customer first', 'warning');
         return;
     }
-    
+
     try {
         showLoading();
-        
+
+        // Get payment details
+        const { paymentStatus, cashPaid, dueAmount } = calculatePaymentAmounts();
+        const grandTotal = calculateGrandTotal();
+
+        // Validate partial payment
+        if (paymentStatus === 'partial') {
+            if (cashPaid <= 0) {
+                showToast('Partial payment amount must be greater than 0. Select "Full Due" for no payment.', 'warning');
+                hideLoading();
+                return;
+            }
+            if (cashPaid >= grandTotal) {
+                if (cashPaid === grandTotal) {
+                    showToast('Amount equals total bill. Please select "Cash Paid" for full payment.', 'warning');
+                } else {
+                    showToast(`Partial payment (Rs ${cashPaid.toFixed(2)}) cannot exceed total bill (Rs ${grandTotal.toFixed(2)}).`, 'warning');
+                }
+                hideLoading();
+                return;
+            }
+        }
+
         // Debug: Log the selected customer data
         console.log('Selected customer for bill save:', selectedCustomer);
         console.log('Bill items:', billItems);
-        
+        console.log('Payment status:', paymentStatus, 'Cash paid:', cashPaid, 'Due amount:', dueAmount);
+
         const billData = {
             items: billItems,
-            totalAmount: calculateGrandTotal(),
+            totalAmount: grandTotal,
             totalItems: billItems.length,
             customerId: selectedCustomer.id
         };
-        
+
         console.log('Bill data being saved:', billData);
-        
+
         const savedBill = await window.electronAPI.saveBill(billData);
-        
+
         // Deduct quantities from product stock
         for (const item of billItems) {
             const product = products.find(p => p.id === item.productId);
@@ -1555,15 +1739,21 @@ async function saveBillToCustomer() {
                     price: product.price,
                     quantity: Math.max(0, newQuantity) // Ensure quantity doesn't go negative
                 });
-                
+
                 // Update local products array
                 product.quantity = Math.max(0, newQuantity);
             }
         }
-        
-        // Update customer dues (add the bill amount to remaining dues)
+
+        // Update customer dues based on payment status
         const currentDues = selectedCustomer.remaining_dues || 0;
-        const newDues = currentDues + calculateGrandTotal();
+        let newDues = currentDues;
+
+        // Only add dues if payment status is not 'cash' (fully paid)
+        if (paymentStatus !== 'cash') {
+            newDues = currentDues + dueAmount;
+        }
+
         await window.electronAPI.updateCustomer(selectedCustomer.id, {
             name: selectedCustomer.name,
             phone: selectedCustomer.phone,
@@ -1572,6 +1762,35 @@ async function saveBillToCustomer() {
 
         // Update local customer data
         selectedCustomer.remaining_dues = newDues;
+
+        // Record payment history
+        try {
+            let transactionType = 'SALE';
+            let notes = '';
+
+            if (paymentStatus === 'cash') {
+                transactionType = 'CASH_SALE';
+                notes = `Full payment received: Rs ${cashPaid.toFixed(2)}`;
+            } else if (paymentStatus === 'due') {
+                transactionType = 'DUE_ADDED';
+                notes = `Full amount added to dues: Rs ${dueAmount.toFixed(2)}`;
+            } else if (paymentStatus === 'partial') {
+                transactionType = 'PARTIAL_PAYMENT';
+                notes = `Partial payment: Rs ${cashPaid.toFixed(2)} paid, Rs ${dueAmount.toFixed(2)} added to dues`;
+            }
+
+            await window.electronAPI.recordPaymentHistory({
+                customerId: selectedCustomer.id,
+                transactionType: transactionType,
+                amount: grandTotal,
+                previousDues: currentDues,
+                newDues: newDues,
+                billId: savedBill.id,
+                notes: notes
+            });
+        } catch (err) {
+            console.error('Error recording payment history:', err);
+        }
 
         // Update customer's last visit
         try {
@@ -1582,45 +1801,61 @@ async function saveBillToCustomer() {
 
         // Record the sale for tracking (only once)
         await window.electronAPI.recordSale(savedBill.id, billItems);
-        
-        showToast(`Bill saved to ${selectedCustomer.name}'s account successfully! Dues updated to Rs ${newDues.toFixed(2)}`, 'success');
-        
+
+        // Show appropriate success message
+        let successMessage = '';
+        if (paymentStatus === 'cash') {
+            successMessage = `Payment received: Rs ${cashPaid.toFixed(2)}. Bill completed!`;
+        } else if (paymentStatus === 'due') {
+            successMessage = `Bill saved to ${selectedCustomer.name}'s account. Total dues: Rs ${newDues.toFixed(2)}`;
+        } else {
+            successMessage = `Partial payment received: Rs ${cashPaid.toFixed(2)}. Rs ${dueAmount.toFixed(2)} added to dues. Total dues: Rs ${newDues.toFixed(2)}`;
+        }
+
+        showToast(successMessage, 'success');
+
         // Check if auto-print is enabled
         const autoPrintCheckbox = document.getElementById('auto-print-checkbox');
         if (autoPrintCheckbox && autoPrintCheckbox.checked) {
             await printBill(true); // Sale already recorded, don't duplicate
         }
-        
+
         // Clear the bill after saving
         billItems = [];
         billCounter = 0;
         updateBillDisplay();
-        
+
+        // Reset payment status to default (cash)
+        document.querySelector('input[name="payment-status"][value="cash"]').checked = true;
+        document.getElementById('partial-payment-input').style.display = 'none';
+        document.getElementById('partial-amount').value = '';
+        document.getElementById('remaining-amount').textContent = 'Rs 0.00';
+
         // Clear customer selection to start fresh
         clearCustomerSelection();
-        
+
         // Refresh only the billing page content, don't navigate to dashboard
         setTimeout(() => {
             // Clear the bill items and reset the form
             billItems = [];
             billCounter = 0;
             updateBillDisplay();
-            
+
             // Clear customer search
             document.getElementById('customer-search').value = '';
             hideCustomerSearchResults();
-            
+
             // Clear product search
             document.getElementById('product-search').value = '';
             document.getElementById('quantity-input').value = '1';
             hideProductSearchResults();
-            
+
             showToast('Ready for new bill', 'success');
         }, 1500);
-        
+
     } catch (error) {
         console.error('Error saving bill to customer:', error);
-        
+
         // Provide more specific error messages
         let errorMessage = 'Error saving bill to customer';
         if (error.message.includes('Customer with ID') && error.message.includes('not found')) {
@@ -1632,7 +1867,7 @@ async function saveBillToCustomer() {
         } else if (error.message) {
             errorMessage = error.message;
         }
-        
+
         showToast(errorMessage, 'error');
     } finally {
         hideLoading();

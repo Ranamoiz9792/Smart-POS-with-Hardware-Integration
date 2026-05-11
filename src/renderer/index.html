@@ -321,6 +321,44 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Payment Status Section -->
+                            <div class="form-group payment-status-group" style="margin-top: 1rem;">
+                                <label>Payment Status:</label>
+                                <div class="payment-status-options">
+                                    <label class="payment-status-option">
+                                        <input type="radio" name="payment-status" value="cash" checked>
+                                        <span class="payment-status-label cash">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                            <span>Cash Paid</span>
+                                        </span>
+                                    </label>
+                                    <label class="payment-status-option">
+                                        <input type="radio" name="payment-status" value="due">
+                                        <span class="payment-status-label due">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Full Due</span>
+                                        </span>
+                                    </label>
+                                    <label class="payment-status-option">
+                                        <input type="radio" name="payment-status" value="partial">
+                                        <span class="payment-status-label partial">
+                                            <i class="fas fa-hand-holding-usd"></i>
+                                            <span>Partial Pay</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div id="partial-payment-input" class="partial-payment-container" style="display: none; margin-top: 0.75rem;">
+                                    <label for="partial-amount">Amount Paid in Cash (Rs):</label>
+                                    <input type="number" id="partial-amount" class="form-control" min="0" step="0.01" max="999999" placeholder="Enter amount paid (must be less than total)">
+                                    <small class="text-muted" style="display: block; margin-top: 0.25rem;">
+                                        Remaining: <strong id="remaining-amount">Rs 0.00</strong>
+                                    </small>
+                                    <small id="partial-payment-hint" class="text-muted" style="display: block; margin-top: 0.25rem; font-size: 0.8rem;">
+                                        <i class="fas fa-info-circle"></i> Partial payment must be less than total bill amount
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

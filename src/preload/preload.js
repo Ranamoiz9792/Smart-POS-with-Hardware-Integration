@@ -37,6 +37,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAllPaymentHistory: () => ipcRenderer.invoke('get-all-payment-history'),
   updateCustomerLastVisit: (customerId) => ipcRenderer.invoke('update-customer-last-visit', customerId),
   getInactiveCustomers: (days) => ipcRenderer.invoke('get-inactive-customers', days),
+  recordPaymentHistory: (paymentData) => ipcRenderer.invoke('record-payment-history', paymentData),
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 
   // Bill operations
   saveBill: (billData) => ipcRenderer.invoke('save-bill', billData),
